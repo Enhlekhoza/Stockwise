@@ -36,6 +36,18 @@ const AISecurityPage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleConfirm = (id: number) => {
+    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
+    // In a real application, you would also send a request to the backend to confirm the alert.
+    console.log(`Alert ${id} confirmed.`);
+  };
+
+  const handleDismiss = (id: number) => {
+    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
+    // In a real application, you would also send a request to the backend to dismiss the alert.
+    console.log(`Alert ${id} dismissed.`);
+  };
+
   return (
     <>
       <h2 className="text-3xl font-bold text-gray-800 mb-6">StockWise AI Security Alerts</h2>
@@ -65,10 +77,16 @@ const AISecurityPage: React.FC = () => {
                   </div>
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                    <button className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm flex items-center">
+                    <button
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm flex items-center"
+                      onClick={() => handleConfirm(alert.id)}
+                    >
                       Confirm
                     </button>
-                    <button className="bg-gray-300 text-gray-800 px-3 py-1 rounded hover:bg-gray-400 text-sm flex items-center">
+                    <button
+                      className="bg-gray-300 text-gray-800 px-3 py-1 rounded hover:bg-gray-400 text-sm flex items-center"
+                      onClick={() => handleDismiss(alert.id)}
+                    >
                       Dismiss
                     </button>
                   </div>
