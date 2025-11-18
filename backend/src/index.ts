@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { loadSalesData, SalesRecord } from './data_loader';
 import { calculateMovingAverage } from './forecasting';
 import { analyzeSecurityImage } from './security_service'; // Import the new service
+import { getMonthlySales } from './sales_data';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -70,6 +71,17 @@ app.get('/api/dashboard/expiry-alerts', (req, res) => {
     { id: 2, name: 'Milk 1L', daysLeft: 3, stock: 8 },
     { id: 3, name: 'Amasi 500ml', daysLeft: 5, stock: 12 },
   ]);
+});
+
+// Dashboard: Sales Trend
+app.get('/api/sales-trend', async (req, res) => {
+  try {
+    const monthlySales = await getMonthlySales();
+    res.json(monthlySales);
+  } catch (error) {
+    console.error('Error getting monthly sales:', error);
+    res.status(500).json({ error: 'Failed to get monthly sales.' });
+  }
 });
 
 // AI Countertop: Mock Transaction

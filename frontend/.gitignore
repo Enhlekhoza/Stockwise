@@ -22,3 +22,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Dataset files and directories
+dataset/
+dataset/GroceryStoreDataset/
+dataset/iconic-images-and-descriptions
+dataset/Sales Dataset.csv
+dataset/GroceryStoreDataset/dataset/test

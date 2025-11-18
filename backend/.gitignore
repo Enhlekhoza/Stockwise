@@ -1,3 +1,10 @@
 node_modules
 .env
 dist
+
+# Dataset files and directories
+dataset/
+dataset/GroceryStoreDataset/
+dataset/iconic-images-and-descriptions
+dataset/GroceryStoreDataset/dataset/test
+dataset/Sales Dataset.csv
