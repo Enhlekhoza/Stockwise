@@ -5,6 +5,7 @@ type Alert = {
   title: string;
   time: string;
   severity: 'High' | 'Medium' | 'Low';
+  image: string;
 };
 
 const getSeverityClass = (severity: Alert['severity']) => {
@@ -22,10 +23,17 @@ const AISecurityPage: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/security/alerts')
-      .then((res) => res.json())
-      .then((data) => setAlerts(data))
-      .catch(console.error);
+    const interval = setInterval(() => {
+      fetch('http://localhost:3001/api/security/alerts')
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data);
+          setAlerts(data);
+        })
+        .catch(console.error);
+    }, 2000); // Fetch alerts every 2 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -40,9 +48,9 @@ const AISecurityPage: React.FC = () => {
           {alerts.length > 0 ? (
             alerts.map((alert) => (
               <div key={alert.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center border rounded-lg p-4">
-                {/* Video Placeholder */}
-                <div className="bg-black rounded flex items-center justify-center text-white aspect-video md:col-span-1">
-                  <p>[Video]</p>
+                {/* Image from alert */}
+                <div className="bg-black rounded flex items-center justify-center text-white aspect-video md:col-span-1 h-48">
+                  <img src={alert.image} alt={alert.title} className="object-contain w-full h-full rounded" />
                 </div>
                 {/* Alert Details */}
                 <div className="md:col-span-2 flex flex-col md:flex-row justify-between">

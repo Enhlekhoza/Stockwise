@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -7,6 +8,7 @@ import { calculateMovingAverage } from './forecasting';
 import { analyzeSecurityImage } from './security_service'; // Import the new service
 import { getMonthlySales } from './sales_data';
 import { calculateDashboardStats } from './dashboard_service';
+import { getSecurityAlerts } from './alert_generator';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -21,6 +23,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001"});
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for image uploads
+app.use(express.static(path.join(__dirname, '../../frontend/public')));
 
 app.get('/', (req, res) => {
   res.send('TII Backend is running!');
@@ -104,12 +107,8 @@ app.get('/api/countertop/transaction', (req, res) => {
 
 // AI Security: Alerts
 app.get('/api/security/alerts', (req, res) => {
-  res.json([
-    { id: 1, title: 'Potential Shoplifting Detected', time: '2 minutes ago', severity: 'High' },
-    { id: 2, title: 'Unusual Activity After Hours', time: '8 hours ago', severity: 'Medium' },
-    { id: 3, title: 'Cash Drawer Opened Without Sale', time: 'Yesterday', severity: 'High' },
-    { id: 4, title: 'Camera Temporarily Obscured', time: 'Yesterday', severity: 'Low' },
-  ]);
+  const alerts = getSecurityAlerts();
+  res.json(alerts);
 });
 
 // New API endpoint for security image analysis
