@@ -8,7 +8,7 @@ import { calculateMovingAverage } from './forecasting';
 import { analyzeSecurityImage } from './security_service'; // Import the new service
 import { getMonthlySales } from './sales_data';
 import { calculateDashboardStats } from './dashboard_service';
-import { getSecurityAlerts } from './alert_generator';
+import { getSecurityAlerts, confirmAlert, dismissAlert } from './alert_generator';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -107,8 +107,24 @@ app.get('/api/countertop/transaction', (req, res) => {
 
 // AI Security: Alerts
 app.get('/api/security/alerts', (req, res) => {
-  const alerts = getSecurityAlerts();
+  const severityFilter = req.query.severity as 'High' | 'Medium' | 'Low' | undefined;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const alerts = getSecurityAlerts(severityFilter, page, limit);
   res.json(alerts);
+});
+
+// New API endpoints for confirming and dismissing security alerts
+app.post('/api/security/alerts/:id/confirm', (req, res) => {
+  const { id } = req.params;
+  confirmAlert(parseInt(id));
+  res.status(200).send('Alert confirmed');
+});
+
+app.post('/api/security/alerts/:id/dismiss', (req, res) => {
+  const { id } = req.params;
+  dismissAlert(parseInt(id));
+  res.status(200).send('Alert dismissed');
 });
 
 // New API endpoint for security image analysis

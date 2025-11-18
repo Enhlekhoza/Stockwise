@@ -8,6 +8,7 @@ export interface SecurityAlert {
   time: string;
   severity: 'High' | 'Medium' | 'Low';
   image: string; // URL path to image
+  status: 'pending' | 'confirmed' | 'dismissed';
 }
 
 const iconicImagesDir = path.resolve(__dirname, '../dataset/GroceryStoreDataset/sample_images/iconic');
@@ -46,6 +47,7 @@ const generateAlert = async () => {
     time: new Date().toLocaleTimeString(),
     severity,
     image: `/images/${randomImageFile}`,
+    status: 'pending',
   };
 
   alerts.unshift(newAlert); // Add to the beginning of the array
@@ -57,6 +59,28 @@ const generateAlert = async () => {
 // Generate an alert every 15 seconds
 setInterval(generateAlert, 15000);
 
-export const getSecurityAlerts = () => {
-  return alerts;
+export const getSecurityAlerts = (severityFilter?: 'High' | 'Medium' | 'Low', page: number = 1, limit: number = 10) => {
+  let filteredAlerts = alerts.filter(alert => alert.status === 'pending');
+  if (severityFilter) {
+    filteredAlerts = filteredAlerts.filter(alert => alert.severity === severityFilter);
+  }
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+
+  return filteredAlerts.slice(startIndex, endIndex);
+};
+
+export const confirmAlert = (id: number) => {
+  const alert = alerts.find(a => a.id === id);
+  if (alert) {
+    alert.status = 'confirmed';
+  }
+};
+
+export const dismissAlert = (id: number) => {
+  const alert = alerts.find(a => a.id === id);
+  if (alert) {
+    alert.status = 'dismissed';
+  }
 };
