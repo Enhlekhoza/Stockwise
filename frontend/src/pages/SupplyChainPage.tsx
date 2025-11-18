@@ -5,11 +5,12 @@ type PurchaseOrder = {
   supplier: string;
   itemCount: number;
   totalCost: string;
-  status: 'Pending Approval' | 'Approved';
+  status: 'Pending Approval' | 'Approved' | 'Rejected';
 };
 
 const SupplyChainPage: React.FC = () => {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [forecast, setForecast] = useState<string[]>([]);
 
   useEffect(() => {
     fetch('http://localhost:3001/api/supply-chain/orders')
@@ -17,6 +18,51 @@ const SupplyChainPage: React.FC = () => {
       .then((data) => setOrders(data))
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:3001/api/supply-chain/forecast')
+      .then((res) => res.json())
+      .then((data) => {
+        // Assuming data.forecast is a string with bullet points, split it into an array
+        const forecastLines = data.forecast.split('\n').filter((line: string) => line.trim() !== '');
+        setForecast(forecastLines);
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleApprove = async (id: string) => {
+    try {
+      await fetch(`http://localhost:3001/api/supply-chain/orders/${id}/approve`, {
+        method: 'POST',
+      });
+      // Update the local state to reflect the change
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === id ? { ...order, status: 'Approved' } : order
+        )
+      );
+      console.log(`Order ${id} approved.`);
+    } catch (error) {
+      console.error(`Error approving order ${id}:`, error);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      await fetch(`http://localhost:3001/api/supply-chain/orders/${id}/reject`, {
+        method: 'POST',
+      });
+      // Update the local state to reflect the change
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === id ? { ...order, status: 'Rejected' } : order
+        )
+      );
+      console.log(`Order ${id} rejected.`);
+    } catch (error) {
+      console.error(`Error rejecting order ${id}:`, error);
+    }
+  };
 
   return (
     <>
@@ -28,15 +74,13 @@ const SupplyChainPage: React.FC = () => {
             Demand Forecast
           </h3>
           <ul className="space-y-3">
-            <li className="text-gray-700">
-              <span className="font-bold text-green-600">High demand</span> for soft drinks expected this weekend (local event).
-            </li>
-            <li className="text-gray-700">
-              <span className="font-bold text-yellow-600">Moderate increase</span> in bread sales predicted due to colder weather.
-            </li>
-            <li className="text-gray-700">
-              <span className="font-bold text-red-600">Potential stockout</span> of Amasi 500ml by Friday.
-            </li>
+            {forecast.length > 0 ? (
+              forecast.map((line, index) => (
+                <li key={index} className="text-gray-700" dangerouslySetInnerHTML={{ __html: line }}></li>
+              ))
+            ) : (
+              <li className="text-gray-500">Loading demand forecast...</li>
+            )}
           </ul>
         </div>
 
@@ -56,10 +100,16 @@ const SupplyChainPage: React.FC = () => {
                   </div>
                   {order.status === 'Pending Approval' ? (
                     <div className="flex space-x-2 mt-4 md:mt-0">
-                      <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center">
+                      <button
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center"
+                        onClick={() => handleApprove(order.id)}
+                      >
                         Approve
                       </button>
-                      <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center">
+                      <button
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+                        onClick={() => handleReject(order.id)}
+                      >
                         Reject
                       </button>
                     </div>

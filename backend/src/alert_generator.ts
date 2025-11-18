@@ -35,9 +35,11 @@ const generateAlert = async () => {
 
   // Simple logic to determine severity based on keywords in the analysis
   let severity: 'High' | 'Medium' | 'Low' = 'Low';
-  if (analysisResult.includes('theft') || analysisResult.includes('suspicious')) {
+  const lowerCaseAnalysis = analysisResult.toLowerCase(); // Convert to lower case for case-insensitive matching
+
+  if (lowerCaseAnalysis.includes('theft') || lowerCaseAnalysis.includes('unauthorized access')) {
     severity = 'High';
-  } else if (analysisResult.includes('unusual') || analysisResult.includes('out of place')) {
+  } else if (lowerCaseAnalysis.includes('suspicious') || lowerCaseAnalysis.includes('unusual behavior') || lowerCaseAnalysis.includes('out of place')) {
     severity = 'Medium';
   }
 

@@ -9,6 +9,7 @@ import { analyzeSecurityImage } from './security_service'; // Import the new ser
 import { getMonthlySales } from './sales_data';
 import { calculateDashboardStats } from './dashboard_service';
 import { getSecurityAlerts, confirmAlert, dismissAlert } from './alert_generator';
+import { getPurchaseOrders, approvePurchaseOrder, rejectPurchaseOrder } from './purchase_orders';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -146,21 +147,40 @@ app.post('/api/security/analyze', async (req, res) => {
 
 // Supply Chain: Purchase Orders
 app.get('/api/supply-chain/orders', (req, res) => {
-  res.json([
-    { id: 'PO-001', supplier: 'Bakers Biscuits', itemCount: 5, totalCost: 'R 550.00', status: 'Pending Approval' },
-    { id: 'PO-002', supplier: 'Coca-Cola Beverages', itemCount: 12, totalCost: 'R 1,800.00', status: 'Pending Approval' },
-    { id: 'PO-003', supplier: 'Simba Snacks', itemCount: 8, totalCost: 'R 920.00', status: 'Approved' },
-  ]);
+  const orders = getPurchaseOrders();
+  res.json(orders);
+});
+
+// New API endpoints for approving and rejecting purchase orders
+app.post('/api/supply-chain/orders/:id/approve', (req, res) => {
+  const { id } = req.params;
+  approvePurchaseOrder(id);
+  res.status(200).send('Purchase order approved');
+});
+
+app.post('/api/supply-chain/orders/:id/reject', (req, res) => {
+  const { id } = req.params;
+  rejectPurchaseOrder(id);
+  res.status(200).send('Purchase order rejected');
 });
 
 // Supply Chain: Demand Forecast
-app.get('/api/supply-chain/forecast', (req, res) => {
+app.get('/api/supply-chain/forecast', async (req, res) => { // Added async
   if (salesData.length === 0) {
     return res.status(503).json({ error: 'Sales data not loaded yet. Please try again in a moment.' });
   }
   try {
-    const forecast = calculateMovingAverage(salesData);
-    res.json(forecast);
+    const movingAverages = calculateMovingAverage(salesData);
+
+    // Construct a prompt for Gemini to interpret the moving averages
+    const prompt = `Given the following monthly sales moving averages (month: average_quantity):\n${JSON.stringify(movingAverages, null, 2)}\n\nProvide a concise, human-readable demand forecast for a small shop owner in a South African township. Highlight any high demand, moderate increases, or potential stockouts. Format it as a list of bullet points.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Gemini's response will be the forecast
+    res.json({ forecast: text });
   } catch (error) {
     console.error('Error calculating forecast:', error);
     res.status(500).json({ error: 'Failed to calculate forecast.' });
