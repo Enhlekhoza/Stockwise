@@ -10,6 +10,8 @@ import { getMonthlySales } from './sales_data';
 import { calculateDashboardStats } from './dashboard_service';
 import { getSecurityAlerts, confirmAlert, dismissAlert } from './alert_generator';
 import { getPurchaseOrders, approvePurchaseOrder, rejectPurchaseOrder } from './purchase_orders';
+import { getTransaction, addItemToTransaction, completeTransaction, cancelTransaction } from './transaction_manager';
+import { getProductById, products } from './products';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -94,16 +96,41 @@ app.get('/api/sales-trend', async (req, res) => {
   }
 });
 
-// AI Countertop: Mock Transaction
+// AI Countertop: Get Current Transaction
 app.get('/api/countertop/transaction', (req, res) => {
-  res.json({
-    items: [
-      { id: 1, name: 'Coca-Cola 2L', price: 'R 25.00' },
-      { id: 2, name: 'Sasko Bread', price: 'R 15.00' },
-      { id: 3, name: 'Simba Chips', price: 'R 10.00' },
-    ],
-    total: 'R 50.00',
-  });
+  const transaction = getTransaction();
+  res.json(transaction);
+});
+
+// AI Countertop: Add Item to Transaction
+app.post('/api/countertop/transaction/add', (req, res) => {
+  const { productId } = req.body;
+  if (!productId) {
+    return res.status(400).json({ error: 'Product ID is required.' });
+  }
+  const item = addItemToTransaction(productId);
+  if (item) {
+    res.json(getTransaction());
+  } else {
+    res.status(404).json({ error: 'Product not found.' });
+  }
+});
+
+// AI Countertop: Complete Transaction
+app.post('/api/countertop/transaction/complete', (req, res) => {
+  const completedTransaction = completeTransaction();
+  res.json(completedTransaction);
+});
+
+// AI Countertop: Cancel Transaction
+app.post('/api/countertop/transaction/cancel', (req, res) => {
+  const cancelledTransaction = cancelTransaction();
+  res.json(cancelledTransaction);
+});
+
+// AI Countertop: Get All Products
+app.get('/api/countertop/products', (req, res) => {
+  res.json(products);
 });
 
 // AI Security: Alerts
