@@ -2,18 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { loadSalesData, SalesRecord } from './data_loader';
+import { calculateMovingAverage } from './forecasting';
+import { analyzeSecurityImage } from './security_service'; // Import the new service
 
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
 const port = process.env.PORT || 3001;
 
+let salesData: SalesRecord[] = [];
+
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001"});
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase limit for image uploads
 
 app.get('/', (req, res) => {
   res.send('TII Backend is running!');
@@ -89,6 +94,23 @@ app.get('/api/security/alerts', (req, res) => {
   ]);
 });
 
+// New API endpoint for security image analysis
+app.post('/api/security/analyze', async (req, res) => {
+  const { image } = req.body; // Expecting base64 image string
+  if (!image) {
+    return res.status(400).json({ error: 'No image data provided.' });
+  }
+
+  try {
+    const analysisResult = await analyzeSecurityImage(image);
+    res.json({ analysis: analysisResult });
+  } catch (error) {
+    console.error('Error during security image analysis:', error);
+    res.status(500).json({ error: 'Failed to analyze security image.' });
+  }
+});
+
+
 // Supply Chain: Purchase Orders
 app.get('/api/supply-chain/orders', (req, res) => {
   res.json([
@@ -98,7 +120,28 @@ app.get('/api/supply-chain/orders', (req, res) => {
   ]);
 });
 
+// Supply Chain: Demand Forecast
+app.get('/api/supply-chain/forecast', (req, res) => {
+  if (salesData.length === 0) {
+    return res.status(503).json({ error: 'Sales data not loaded yet. Please try again in a moment.' });
+  }
+  try {
+    const forecast = calculateMovingAverage(salesData);
+    res.json(forecast);
+  } catch (error) {
+    console.error('Error calculating forecast:', error);
+    res.status(500).json({ error: 'Failed to calculate forecast.' });
+  }
+});
 
-app.listen(port, () => {
+
+app.listen(port, async () => {
   console.log(`Backend server listening at http://localhost:${port}`);
+  try {
+    salesData = await loadSalesData();
+    console.log('Sales data loaded successfully. Records:', salesData.length);
+    // console.log('First 5 records:', salesData.slice(0, 5)); // Optional: Keep for debugging
+  } catch (error) {
+    console.error('Failed to load sales data:', error);
+  }
 });
