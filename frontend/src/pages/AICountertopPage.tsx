@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { FiCamera, FiXCircle } from 'react-icons/fi';
 
 type Item = {
   id: number;
@@ -24,12 +23,11 @@ const AICountertopPage: React.FC = () => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">AI-Powered Countertop</h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-6">StockWise AI-Powered Countertop</h2>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Camera Feed */}
         <div className="lg:col-span-2 bg-black rounded-lg shadow-md flex items-center justify-center text-white">
           <div className="text-center">
-            <FiCamera size={64} className="mx-auto mb-4" />
             <p>Live Camera Feed</p>
             <p className="text-sm text-gray-400">(Placeholder)</p>
           </div>
@@ -63,7 +61,7 @@ const AICountertopPage: React.FC = () => {
               Complete Sale
             </button>
             <button className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 flex items-center justify-center" disabled={!transaction}>
-              <FiXCircle className="mr-2" /> Cancel
+              Cancel
             </button>
           </div>
         </div>

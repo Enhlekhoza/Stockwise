@@ -1,11 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
-const port = process.env.PORT || 3001; // Use port from .env or default to 3001
+const port = process.env.PORT || 3001;
+
+// Initialize Google Generative AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
 app.use(cors());
 app.use(express.json());
@@ -14,7 +19,35 @@ app.get('/', (req, res) => {
   res.send('TII Backend is running!');
 });
 
-// --- Mock API Endpoints ---
+// --- API Endpoints ---
+
+// Advisor: Chat Response (Now connected to Gemini)
+app.post('/api/advisor/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    // A simple prompt enhancement to guide the AI
+    const prompt = `You are an expert business advisor for a small shop owner in a South African township. Your tone should be helpful, encouraging, and easy to understand. The user's question is: "${message}"`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({
+      sender: 'ai',
+      text: text,
+    });
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    res.status(500).json({
+      sender: 'ai',
+      text: 'Sorry, I encountered an error trying to connect to the AI service. Please check the backend console for details.',
+    });
+  }
+});
+
+
+// --- Mock API Endpoints (for other features) ---
 
 // Dashboard: Stat Cards
 app.get('/api/dashboard/stats', (req, res) => {
@@ -63,15 +96,6 @@ app.get('/api/supply-chain/orders', (req, res) => {
     { id: 'PO-002', supplier: 'Coca-Cola Beverages', itemCount: 12, totalCost: 'R 1,800.00', status: 'Pending Approval' },
     { id: 'PO-003', supplier: 'Simba Snacks', itemCount: 8, totalCost: 'R 920.00', status: 'Approved' },
   ]);
-});
-
-// Advisor: Chat Response
-app.post('/api/advisor/chat', (req, res) => {
-  const { message } = req.body;
-  res.json({
-    sender: 'ai',
-    text: `I have received your message: "${message}". I am processing your request and will provide a detailed analysis shortly.`,
-  });
 });
 
 

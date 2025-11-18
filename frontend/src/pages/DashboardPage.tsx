@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import StatCard from '../components/StatCard';
 import SalesChart from '../components/SalesChart';
 import ExpiryAlerts from '../components/ExpiryAlerts';
-import { FiDollarSign, FiShoppingCart, FiActivity } from 'react-icons/fi';
 
 // Define types for our data
 type Stat = {
@@ -16,12 +15,6 @@ type Alert = {
   name: string;
   daysLeft: number;
   stock: number;
-};
-
-const iconMap: { [key: string]: React.ReactNode } = {
-  "Today's Revenue": <FiDollarSign size={32} className="text-green-500" />,
-  "Today's Sales": <FiShoppingCart size={32} className="text-blue-500" />,
-  'Stock Health': <FiActivity size={32} className="text-yellow-500" />,
 };
 
 const DashboardPage: React.FC = () => {
@@ -49,7 +42,7 @@ const DashboardPage: React.FC = () => {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {stats.map((stat) => (
-          <StatCard key={stat.id} title={stat.title} value={stat.value} icon={iconMap[stat.title]} />
+          <StatCard key={stat.id} title={stat.title} value={stat.value} icon={null} />
         ))}
       </div>
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { FiSend, FiUser, FiCpu } from 'react-icons/fi';
+import React, { useState } from 'react';
 
 type Message = {
   sender: 'user' | 'ai';
@@ -38,7 +37,7 @@ const AdvisorPage: React.FC = () => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Generative Business Advisor</h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-6">StockWise Generative Business Advisor</h2>
       <div className="bg-white rounded-lg shadow-md flex flex-col" style={{ height: '70vh' }}>
         {/* Message Window */}
         <div className="flex-1 p-6 overflow-y-auto">
@@ -47,7 +46,7 @@ const AdvisorPage: React.FC = () => {
               <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                 {msg.sender === 'ai' && (
                   <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center flex-shrink-0">
-                    <FiCpu size={20} />
+                    {/* Icon removed to fix build error */}
                   </div>
                 )}
                 <div className={`p-3 rounded-lg max-w-lg ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
@@ -55,7 +54,7 @@ const AdvisorPage: React.FC = () => {
                 </div>
                 {msg.sender === 'user' && (
                   <div className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
-                    <FiUser size={20} />
+                    {/* Icon removed to fix build error */}
                   </div>
                 )}
               </div>
@@ -76,10 +75,10 @@ const AdvisorPage: React.FC = () => {
             />
             <button
               onClick={handleSend}
-              className="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
               disabled={!input.trim()}
             >
-              <FiSend size={20} />
+              Send
             </button>
           </div>
         </div>

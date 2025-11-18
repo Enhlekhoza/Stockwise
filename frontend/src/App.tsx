@@ -20,7 +20,7 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-gray-800 text-white flex-shrink-0">
-      <div className="p-4 text-2xl font-bold border-b border-gray-700">TII Dashboard</div>
+      <div className="p-4 text-2xl font-bold border-b border-gray-700">Stockwise</div>
       <nav className="mt-4">
         <ul>
           {navItems.map((item) => (
@@ -48,7 +48,7 @@ const App = () => {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="bg-white shadow-md p-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Welcome to TII</h1>
+            <h1 className="text-xl font-semibold">Welcome to Stockwise</h1>
             <div className="flex items-center">
               <span className="mr-2">Shop Owner</span>
               <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
