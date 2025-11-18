@@ -6,6 +6,7 @@ import { loadSalesData, SalesRecord } from './data_loader';
 import { calculateMovingAverage } from './forecasting';
 import { analyzeSecurityImage } from './security_service'; // Import the new service
 import { getMonthlySales } from './sales_data';
+import { calculateDashboardStats } from './dashboard_service';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -57,11 +58,16 @@ app.post('/api/advisor/chat', async (req, res) => {
 
 // Dashboard: Stat Cards
 app.get('/api/dashboard/stats', (req, res) => {
-  res.json([
-    { id: 1, title: "Today's Revenue", value: 'R 1,250.00' },
-    { id: 2, title: "Today's Sales", value: '142 items' },
-    { id: 3, title: 'Stock Health', value: '92% Good' },
-  ]);
+  if (salesData.length === 0) {
+    return res.status(503).json({ error: 'Sales data not loaded yet. Please try again in a moment.' });
+  }
+  try {
+    const stats = calculateDashboardStats(salesData);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error calculating dashboard stats:', error);
+    res.status(500).json({ error: 'Failed to calculate dashboard stats.' });
+  }
 });
 
 // Dashboard: Expiry Alerts
