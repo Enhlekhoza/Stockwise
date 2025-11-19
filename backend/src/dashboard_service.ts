@@ -1,6 +1,6 @@
 import db from './db';
 
-interface DbSalesRecord {
+export interface DbSalesRecord {
   transaction_id: number;
   total: number;
   created_at: Date;
