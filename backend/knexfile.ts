@@ -12,6 +12,7 @@ const config: { [key: string]: Knex.Config } = {
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'stockwise_db',
+      ssl: { rejectUnauthorized: false } // Add this line for SSL support
     },
     migrations: {
       tableName: 'knex_migrations',
@@ -23,8 +24,10 @@ const config: { [key: string]: Knex.Config } = {
   },
   production: {
     client: 'pg',
-    connection: process.env.DATABASE_URL, // Use DATABASE_URL for production
-    migrations: {
+    connection: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false } // Add this line for SSL support
+    },    migrations: {
       tableName: 'knex_migrations',
       directory: './migrations',
     },

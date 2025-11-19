@@ -31,7 +31,62 @@ app.get('/', (req, res) => {
   res.send('TII Backend is running!');
 });
 
+import { registerUser, loginUser } from './auth_service';
+import jwt from 'jsonwebtoken'; // Import jsonwebtoken for middleware
+
+// Middleware to authenticate JWT token
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (token == null) return res.status(401).json({ error: 'Authentication token required.' });
+
+  jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+    req.user = user;
+    next();
+  });
+};
+
 // --- API Endpoints ---
+
+// User Registration
+app.post('/api/register', async (req, res) => {
+  const { username, password, email } = req.body;
+  if (!username || !password || !email) {
+    return res.status(400).json({ error: 'Username, password, and email are required.' });
+  }
+  try {
+    const user = await registerUser(username, password, email);
+    if (user) {
+      res.status(201).json({ message: 'User registered successfully!' });
+    } else {
+      res.status(400).json({ error: 'Failed to register user. Username or email might already exist.' });
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error during registration.' });
+  }
+});
+
+// User Login
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required.' });
+  }
+  try {
+    const token = await loginUser(username, password);
+    if (token) {
+      res.json({ message: 'Login successful!', token });
+    } else {
+      res.status(401).json({ error: 'Invalid username or password.' }); // Corrected to 401 Unauthorized
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error during login.' });
+  }
+});
 
 // Advisor: Chat Response (Now connected to Gemini)
 app.post('/api/advisor/chat', async (req, res) => {
@@ -62,7 +117,7 @@ app.post('/api/advisor/chat', async (req, res) => {
 // --- Mock API Endpoints (for other features) ---
 
 // Dashboard: Stat Cards
-app.get('/api/dashboard/stats', async (req, res) => {
+app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
   try {
     const stats = await calculateDashboardStats();
     res.json(stats);
