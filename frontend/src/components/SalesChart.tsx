@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { authenticatedFetch } from '../utils/api';
 
 ChartJS.register(
   CategoryScale,
@@ -30,16 +31,16 @@ const SalesChart: React.FC = () => {
   const [chartData, setChartData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/sales-trend')
-      .then((res) => res.json())
-      .then((data: MonthlySales[]) => {
-        const sortedData = data.sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+    const fetchSalesData = async () => {
+      try {
+        const data = await authenticatedFetch('/sales-trend');
+        const sortedData = data.sort((a: MonthlySales, b: MonthlySales) => new Date(a.month).getTime() - new Date(b.month).getTime());
         const chartData = {
-          labels: sortedData.map((d) => d.month),
+          labels: sortedData.map((d: MonthlySales) => d.month),
           datasets: [
             {
               label: 'Total Sales',
-              data: sortedData.map((d) => d.totalSales),
+              data: sortedData.map((d: MonthlySales) => d.totalSales),
               fill: false,
               backgroundColor: 'rgb(75, 192, 192)',
               borderColor: 'rgba(75, 192, 192, 0.2)',
@@ -47,8 +48,12 @@ const SalesChart: React.FC = () => {
           ],
         };
         setChartData(chartData);
-      })
-      .catch(console.error);
+      } catch (error) {
+        console.error('Error fetching sales data:', error);
+      }
+    };
+    
+    fetchSalesData();
   }, []);
 
   return (

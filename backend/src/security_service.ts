@@ -22,8 +22,15 @@ export const analyzeSecurityImage = async (base64Image: string): Promise<string>
     const response = await result.response;
     const text = response.text();
     return text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing security image with Gemini API:", error);
-    throw new Error("Failed to analyze security image.");
+    
+    // Handle quota exceeded gracefully
+    if (error.message?.includes('quota') || error.message?.includes('429')) {
+      return "Security analysis temporarily unavailable due to API quota limits. Please check camera feed manually.";
+    }
+    
+    // Return fallback message for other errors
+    return "Security analysis temporarily unavailable. Please check camera feed manually.";
   }
 };

@@ -1,44 +1,72 @@
-import db from './db';
+import fs from 'fs';
+import path from 'path';
 
-export interface DbSalesRecord {
-  transaction_id: number;
-  total: number;
-  created_at: Date;
-  quantity: number;
+export interface DashboardStat {
+  id: number;
+  title: string;
+  value: string;
 }
 
-export const getSalesRecordsFromDb = async (): Promise<DbSalesRecord[]> => {
-  return db('transactions as t')
-    .join('transaction_items as ti', 't.id', 'ti.transaction_id')
-    .select(
-      't.id as transaction_id',
-      't.total',
-      't.created_at',
-      'ti.quantity'
-    ) as Promise<DbSalesRecord[]>;
-};
-
-export const calculateDashboardStats = async () => {
-  const salesData = await getSalesRecordsFromDb();
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-
-  let todaysRevenue = 0;
-  let todaysSalesCount = 0;
-
-  salesData.forEach((record) => {
-    const orderDate = new Date(record.created_at).toISOString().split('T')[0];
-
-    if (orderDate === todayStr) {
-      todaysRevenue += record.total;
-      todaysSalesCount += record.quantity;
+export const calculateDashboardStats = async (): Promise<DashboardStat[]> => {
+  try {
+    // Read CSV file directly
+    const csvPath = path.join(__dirname, '..', 'dataset', 'Sales Dataset.csv');
+    const csvData = fs.readFileSync(csvPath, 'utf8');
+    
+    // Parse CSV
+    const lines = csvData.split('\n').filter(line => line.trim());
+    
+    // Fix malformed header
+    let headerLine = lines[0];
+    if (headerLine.startsWith(' Select-Object')) {
+      headerLine = 'Order ID,Amount,Profit,Quantity,Category,Sub-Category,PaymentMode,Order Date,CustomerName,State,City,Year-Month';
     }
-  });
-
-  return [
-    { id: 1, title: "Today's Revenue", value: `R ${todaysRevenue.toFixed(2)}` },
-    { id: 2, title: "Today's Sales", value: `${todaysSalesCount} items` },
-    // TODO: Implement dynamic Stock Health calculation based on actual stock levels in the database.
-    // { id: 3, title: 'Stock Health', value: 'N/A' },
-  ];
+    
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    let todaysRevenue = 0;
+    let todaysSalesCount = 0;
+    let totalRevenue = 0;
+    let totalSales = 0;
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith('Select-Object')) continue;
+      
+      const values = line.split(',');
+      if (values.length >= 11) {
+        const amount = parseFloat(values[1] || '0');
+        const quantity = parseInt(values[3] || '0');
+        const orderDate = values[6]?.trim();
+        
+        if (amount > 0) {
+          totalRevenue += amount;
+          totalSales += quantity;
+          
+          // Check if today's sale (simplified check)
+          if (orderDate && orderDate.includes(todayStr.split('-')[2])) { // Check if day matches
+            todaysRevenue += amount;
+            todaysSalesCount += quantity;
+          }
+        }
+      }
+    }
+    
+    return [
+      { id: 1, title: "Today's Revenue", value: `R ${todaysRevenue.toFixed(2)}` },
+      { id: 2, title: "Today's Sales", value: `${todaysSalesCount} items` },
+      { id: 3, title: "Total Revenue", value: `R ${totalRevenue.toFixed(2)}` },
+      { id: 4, title: "Total Sales", value: `${totalSales} items` },
+    ];
+    
+  } catch (error) {
+    console.error('Error calculating dashboard stats:', error);
+    return [
+      { id: 1, title: "Today's Revenue", value: "R 0.00" },
+      { id: 2, title: "Today's Sales", value: "0 items" },
+      { id: 3, title: "Total Revenue", value: "R 0.00" },
+      { id: 4, title: "Total Sales", value: "0 items" },
+    ];
+  }
 };

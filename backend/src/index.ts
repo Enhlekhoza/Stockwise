@@ -128,7 +128,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 });
 
 // Dashboard: Expiry Alerts
-app.get('/api/dashboard/expiry-alerts', (req, res) => {
+app.get('/api/dashboard/expiry-alerts', authenticateToken, (req, res) => {
   res.json([
     { id: 1, name: 'Brown Bread', daysLeft: 2, stock: 5 },
     { id: 2, name: 'Milk 1L', daysLeft: 3, stock: 8 },
@@ -137,7 +137,7 @@ app.get('/api/dashboard/expiry-alerts', (req, res) => {
 });
 
 // Dashboard: Sales Trend
-app.get('/api/sales-trend', async (req, res) => {
+app.get('/api/sales-trend', authenticateToken, async (req, res) => {
   try {
     const monthlySales = await getMonthlySales();
     res.json(monthlySales);
@@ -248,7 +248,7 @@ app.post('/api/security/alerts/:id/dismiss', (req, res) => {
 });
 
 // New API endpoint for security image analysis
-app.post('/api/security/analyze', async (req, res) => {
+app.post('/api/security/analyze', authenticateToken, async (req, res) => {
   const { image } = req.body; // Expecting base64 image string
   if (!image) {
     return res.status(400).json({ error: 'No image data provided.' });
@@ -257,9 +257,9 @@ app.post('/api/security/analyze', async (req, res) => {
   try {
     const analysisResult = await analyzeSecurityImage(image);
     res.json({ analysis: analysisResult });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during security image analysis:', error);
-    res.status(500).json({ error: 'Failed to analyze security image.' });
+    res.status(500).json({ error: error.message || 'Failed to analyze security image.' });
   }
 });
 

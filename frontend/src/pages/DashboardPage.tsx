@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StatCard from '../components/StatCard';
 import SalesChart from '../components/SalesChart';
 import ExpiryAlerts from '../components/ExpiryAlerts';
+import { authenticatedFetch } from '../utils/api';
 
 // Define types for our data
 type Stat = {
@@ -22,17 +23,21 @@ const DashboardPage: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
-    // Fetch stats
-    fetch('http://localhost:3001/api/dashboard/stats')
-      .then((res) => res.json())
-      .then((data) => setStats(data))
-      .catch(console.error);
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch stats
+        const statsData = await authenticatedFetch('/dashboard/stats');
+        setStats(statsData);
 
-    // Fetch expiry alerts
-    fetch('http://localhost:3001/api/dashboard/expiry-alerts')
-      .then((res) => res.json())
-      .then((data) => setAlerts(data))
-      .catch(console.error);
+        // Fetch expiry alerts
+        const alertsData = await authenticatedFetch('/dashboard/expiry-alerts');
+        setAlerts(alertsData);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   return (
