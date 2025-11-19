@@ -38,6 +38,7 @@ export const calculateDashboardStats = async () => {
   return [
     { id: 1, title: "Today's Revenue", value: `R ${todaysRevenue.toFixed(2)}` },
     { id: 2, title: "Today's Sales", value: `${todaysSalesCount} items` },
-    { id: 3, title: 'Stock Health', value: '92% Good' }, // Placeholder
+    // TODO: Implement dynamic Stock Health calculation based on actual stock levels in the database.
+    // { id: 3, title: 'Stock Health', value: 'N/A' },
   ];
 };
