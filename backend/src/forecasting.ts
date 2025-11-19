@@ -1,4 +1,5 @@
-import { SalesRecord } from './data_loader';
+import db from './db';
+import { DbSalesRecord, getSalesRecordsFromDb } from './dashboard_service';
 
 interface MonthlySales {
   [key: string]: {
@@ -7,13 +8,14 @@ interface MonthlySales {
   };
 }
 
-export const calculateMovingAverage = (salesData: SalesRecord[]) => {
+export const calculateMovingAverage = async () => {
+  const salesData = await getSalesRecordsFromDb();
   const monthlySales: MonthlySales = {};
 
   // Aggregate sales data by month
   salesData.forEach(record => {
-    const month = record['Year-Month'];
-    const quantity = parseInt(record.Quantity, 10);
+    const month = new Date(record.created_at).toISOString().substring(0, 7); // YYYY-MM
+    const quantity = record.quantity;
 
     if (!monthlySales[month]) {
       monthlySales[month] = { totalQuantity: 0, count: 0 };

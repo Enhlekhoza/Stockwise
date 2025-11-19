@@ -1,6 +1,25 @@
-import { SalesRecord } from './data_loader';
+import db from './db';
 
-export const calculateDashboardStats = (salesData: SalesRecord[]) => {
+interface DbSalesRecord {
+  transaction_id: number;
+  total: number;
+  created_at: Date;
+  quantity: number;
+}
+
+export const getSalesRecordsFromDb = async (): Promise<DbSalesRecord[]> => {
+  return db('transactions as t')
+    .join('transaction_items as ti', 't.id', 'ti.transaction_id')
+    .select(
+      't.id as transaction_id',
+      't.total',
+      't.created_at',
+      'ti.quantity'
+    ) as Promise<DbSalesRecord[]>;
+};
+
+export const calculateDashboardStats = async () => {
+  const salesData = await getSalesRecordsFromDb();
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
@@ -8,17 +27,14 @@ export const calculateDashboardStats = (salesData: SalesRecord[]) => {
   let todaysSalesCount = 0;
 
   salesData.forEach((record) => {
-    // Assuming 'Order Date' is in a format that can be parsed.
-    // This might need adjustment based on the actual date format in the CSV.
-    const orderDate = new Date(record['Order Date']).toISOString().split('T')[0];
+    const orderDate = new Date(record.created_at).toISOString().split('T')[0];
 
     if (orderDate === todayStr) {
-      todaysRevenue += parseFloat(record.Amount);
-      todaysSalesCount += parseInt(record.Quantity, 10);
+      todaysRevenue += record.total;
+      todaysSalesCount += record.quantity;
     }
   });
 
-  // For 'Stock Health', we don't have enough data, so we'll return a placeholder.
   return [
     { id: 1, title: "Today's Revenue", value: `R ${todaysRevenue.toFixed(2)}` },
     { id: 2, title: "Today's Sales", value: `${todaysSalesCount} items` },

@@ -1,4 +1,4 @@
-import { loadSalesData, SalesRecord } from './data_loader';
+import db from './db';
 
 export interface MonthlySales {
   month: string;
@@ -6,22 +6,16 @@ export interface MonthlySales {
 }
 
 export const getMonthlySales = async (): Promise<MonthlySales[]> => {
-  const salesData = await loadSalesData();
-  const monthlySales: { [key: string]: number } = {};
+  const sales = await db('transactions')
+    .select(
+      db.raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
+      db.raw('SUM(total) as "totalSales"')
+    )
+    .groupBy(db.raw("TO_CHAR(created_at, 'YYYY-MM')"))
+    .orderBy('month');
 
-  salesData.forEach((record: SalesRecord) => {
-    const month = record['Year-Month'];
-    const amount = parseFloat(record.Amount);
-
-    if (monthlySales[month]) {
-      monthlySales[month] += amount;
-    } else {
-      monthlySales[month] = amount;
-    }
-  });
-
-  return Object.keys(monthlySales).map((month) => ({
-    month,
-    totalSales: monthlySales[month],
+  return sales.map((s: any) => ({
+    month: s.month,
+    totalSales: parseFloat(s.totalSales),
   }));
 };

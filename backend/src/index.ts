@@ -3,7 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { loadSalesData, SalesRecord } from './data_loader';
 import { calculateMovingAverage } from './forecasting';
 import { analyzeSecurityImage } from './security_service'; // Import the new service
 import { getMonthlySales } from './sales_data';
@@ -11,14 +10,14 @@ import { calculateDashboardStats } from './dashboard_service';
 import { getSecurityAlerts, confirmAlert, dismissAlert } from './alert_generator';
 import { getPurchaseOrders, approvePurchaseOrder, rejectPurchaseOrder } from './purchase_orders';
 import { getTransaction, addItemToTransaction, completeTransaction, cancelTransaction } from './transaction_manager';
-import { getProductById, products } from './products';
+import { getAllProducts, getProductById } from './products';
 
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-let salesData: SalesRecord[] = [];
+
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
@@ -63,12 +62,9 @@ app.post('/api/advisor/chat', async (req, res) => {
 // --- Mock API Endpoints (for other features) ---
 
 // Dashboard: Stat Cards
-app.get('/api/dashboard/stats', (req, res) => {
-  if (salesData.length === 0) {
-    return res.status(503).json({ error: 'Sales data not loaded yet. Please try again in a moment.' });
-  }
+app.get('/api/dashboard/stats', async (req, res) => {
   try {
-    const stats = calculateDashboardStats(salesData);
+    const stats = await calculateDashboardStats();
     res.json(stats);
   } catch (error) {
     console.error('Error calculating dashboard stats:', error);
@@ -103,34 +99,75 @@ app.get('/api/countertop/transaction', (req, res) => {
 });
 
 // AI Countertop: Add Item to Transaction
-app.post('/api/countertop/transaction/add', (req, res) => {
+app.post('/api/countertop/transaction/add', async (req, res) => {
   const { productId } = req.body;
   if (!productId) {
     return res.status(400).json({ error: 'Product ID is required.' });
   }
-  const item = addItemToTransaction(productId);
-  if (item) {
-    res.json(getTransaction());
-  } else {
-    res.status(404).json({ error: 'Product not found.' });
+  try {
+    const item = await addItemToTransaction(productId);
+    if (item) {
+      res.json(getTransaction());
+    } else {
+      res.status(404).json({ error: 'Product not found or could not be added.' });
+    }
+  } catch (error) {
+    console.error('Error adding item to transaction:', error);
+    res.status(500).json({ error: 'Failed to add item to transaction.' });
   }
 });
 
 // AI Countertop: Complete Transaction
-app.post('/api/countertop/transaction/complete', (req, res) => {
-  const completedTransaction = completeTransaction();
-  res.json(completedTransaction);
+app.post('/api/countertop/transaction/complete', async (req, res) => {
+  try {
+    const completedTransaction = await completeTransaction();
+    if (completedTransaction) {
+      res.json(completedTransaction);
+    } else {
+      res.status(400).json({ error: 'Cannot complete an empty transaction.' });
+    }
+  } catch (error) {
+    console.error('Error completing transaction:', error);
+    res.status(500).json({ error: 'Failed to complete transaction.' });
+  }
 });
 
 // AI Countertop: Cancel Transaction
 app.post('/api/countertop/transaction/cancel', (req, res) => {
-  const cancelledTransaction = cancelTransaction();
-  res.json(cancelledTransaction);
+  try {
+    const cancelledTransaction = cancelTransaction();
+    res.json(cancelledTransaction);
+  } catch (error) {
+    console.error('Error cancelling transaction:', error);
+    res.status(500).json({ error: 'Failed to cancel transaction.' });
+  }
 });
 
 // AI Countertop: Get All Products
-app.get('/api/countertop/products', (req, res) => {
-  res.json(products);
+app.get('/api/countertop/products', async (req, res) => {
+  try {
+    const products = await getAllProducts();
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching all products:', error);
+    res.status(500).json({ error: 'Failed to retrieve products.' });
+  }
+});
+
+// AI Countertop: Get Product by ID
+app.get('/api/countertop/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await getProductById(id);
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ error: 'Product not found.' });
+    }
+  } catch (error) {
+    console.error(`Error fetching product with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to retrieve product.' });
+  }
 });
 
 // AI Security: Alerts
@@ -192,12 +229,9 @@ app.post('/api/supply-chain/orders/:id/reject', (req, res) => {
 });
 
 // Supply Chain: Demand Forecast
-app.get('/api/supply-chain/forecast', async (req, res) => { // Added async
-  if (salesData.length === 0) {
-    return res.status(503).json({ error: 'Sales data not loaded yet. Please try again in a moment.' });
-  }
+app.get('/api/supply-chain/forecast', async (req, res) => {
   try {
-    const movingAverages = calculateMovingAverage(salesData);
+    const movingAverages = await calculateMovingAverage();
 
     // Construct a prompt for Gemini to interpret the moving averages
     const prompt = `Given the following monthly sales moving averages (month: average_quantity):\n${JSON.stringify(movingAverages, null, 2)}\n\nProvide a concise, human-readable demand forecast for a small shop owner in a South African township. Highlight any high demand, moderate increases, or potential stockouts. Format it as a list of bullet points.`;
@@ -217,11 +251,4 @@ app.get('/api/supply-chain/forecast', async (req, res) => { // Added async
 
 app.listen(port, async () => {
   console.log(`Backend server listening at http://localhost:${port}`);
-  try {
-    salesData = await loadSalesData();
-    console.log('Sales data loaded successfully. Records:', salesData.length);
-    // console.log('First 5 records:', salesData.slice(0, 5)); // Optional: Keep for debugging
-  } catch (error) {
-    console.error('Failed to load sales data:', error);
-  }
 });
